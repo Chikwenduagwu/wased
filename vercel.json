@@ -35,5 +35,7 @@
       "source": "/submissions",
       "destination": "/pages/submissions.html"
     }
-  ]
+  ],
+  "cleanUrls": true,
+  "trailingSlash": false
 }
