@@ -1,16 +1,32 @@
 {
-  "rewrites": [
-    { "source": "/", "destination": "/pages/index.html" },
-    { "source": "/index.html", "destination": "/pages/index.html" },
-    { "source": "/tasks", "destination": "/pages/tasks.html" },
-    { "source": "/tasks.html", "destination": "/pages/tasks.html" },
-    { "source": "/create-task", "destination": "/pages/create-task.html" },
-    { "source": "/create-task.html", "destination": "/pages/create-task.html" },
-    { "source": "/dashboard", "destination": "/pages/dashboard.html" },
-    { "source": "/dashboard.html", "destination": "/pages/dashboard.html" },
-    { "source": "/submissions", "destination": "/pages/submissions.html" },
-    { "source": "/submissions.html", "destination": "/pages/submissions.html" }
-  ],
-  "cleanUrls": true,
-  "trailingSlash": false
+  "routes": [
+    {
+      "src": "/css/(.*)",
+      "dest": "/css/$1"
+    },
+    {
+      "src": "/js/(.*)",
+      "dest": "/js/$1"
+    },
+    {
+      "src": "/tasks",
+      "dest": "/pages/tasks.html"
+    },
+    {
+      "src": "/create-task",
+      "dest": "/pages/create-task.html"
+    },
+    {
+      "src": "/dashboard",
+      "dest": "/pages/dashboard.html"
+    },
+    {
+      "src": "/submissions",
+      "dest": "/pages/submissions.html"
+    },
+    {
+      "src": "/",
+      "dest": "/pages/index.html"
+    }
+  ]
 }
