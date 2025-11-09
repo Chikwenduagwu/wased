@@ -4,16 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BaseTask - Decentralized Task-to-Earn Platform</title>
-  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <header>
     <nav class="container">
-      <a href="/pages/index.html" class="logo">BaseTask</a>
+      <a href="/" class="logo">BaseTask</a>
       <ul class="nav-links">
-        <li><a href="/pages/tasks.html">Browse Tasks</a></li>
-        <li><a href="/pages/create-task.html">Create Task</a></li>
-        <li><a href="/pages/dashboard.html">Dashboard</a></li>
+        <li><a href="/tasks">Browse Tasks</a></li>
+        <li><a href="/create-task">Create Task</a></li>
+        <li><a href="/dashboard">Dashboard</a></li>
         <li>
           <button id="connectWalletBtn" class="btn btn-primary">Connect Wallet</button>
           <div id="walletInfo" class="wallet-info" style="display: none;">
@@ -32,7 +32,7 @@
         <p>Join the decentralized task marketplace on Base Sepolia. Create tasks, earn rewards, all powered by blockchain.</p>
         <div class="flex flex-center gap-2">
           <button id="heroConnectBtn" class="btn btn-primary glow-on-hover">Get Started</button>
-          <a href="/pages/tasks.html" class="btn btn-outline">Browse Tasks</a>
+          <a href="/tasks" class="btn btn-outline">Browse Tasks</a>
         </div>
       </div>
     </section>
@@ -43,7 +43,7 @@
         <div class="card text-center">
           <div style="font-size: 48px; margin-bottom: 15px;">👛</div>
           <h3>1. Connect Wallet</h3>
-          <p class="text-secondary">Connect your Web3 wallet using WalletConnect to get started on Base Sepolia testnet.</p>
+          <p class="text-secondary">Connect your Web3 wallet using MetaMask to get started on Base Sepolia testnet.</p>
         </div>
         <div class="card text-center">
           <div style="font-size: 48px; margin-bottom: 15px;">📋</div>
@@ -101,16 +101,16 @@
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
   <!-- App Scripts -->
-  <script src="../js/config.js"></script>
-  <script src="../js/wallet.js"></script>
-  <script src="../js/contract.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/wallet.js"></script>
+  <script src="js/contract.js"></script>
 
   <script>
-    // Connect wallet button handlers
+    // Connect wallet button handlers - FIXED REDIRECTS
     document.getElementById('connectWalletBtn').addEventListener('click', async () => {
       try {
         await connectWallet();
-        window.location.href = '/pages/dashboard.html';
+        window.location.href = '/dashboard'; // FIXED: no /pages/
       } catch (error) {
         console.error('Connection error:', error);
       }
@@ -119,7 +119,7 @@
     document.getElementById('heroConnectBtn').addEventListener('click', async () => {
       try {
         await connectWallet();
-        window.location.href = '/pages/dashboard.html';
+        window.location.href = '/dashboard'; // FIXED: no /pages/
       } catch (error) {
         console.error('Connection error:', error);
       }
@@ -128,7 +128,7 @@
     document.getElementById('ctaConnectBtn').addEventListener('click', async () => {
       try {
         await connectWallet();
-        window.location.href = '/pages/dashboard.html';
+        window.location.href = '/dashboard'; // FIXED: no /pages/
       } catch (error) {
         console.error('Connection error:', error);
       }
