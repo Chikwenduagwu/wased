@@ -1,32 +1,8 @@
 {
-  "routes": [
+  "rewrites": [
     {
-      "src": "/css/(.*)",
-      "dest": "/css/$1"
-    },
-    {
-      "src": "/js/(.*)",
-      "dest": "/js/$1"
-    },
-    {
-      "src": "/tasks",
-      "dest": "/pages/tasks.html"
-    },
-    {
-      "src": "/create-task",
-      "dest": "/pages/create-task.html"
-    },
-    {
-      "src": "/dashboard",
-      "dest": "/pages/dashboard.html"
-    },
-    {
-      "src": "/submissions",
-      "dest": "/pages/submissions.html"
-    },
-    {
-      "src": "/",
-      "dest": "/pages/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
