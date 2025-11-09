@@ -1,41 +1,4 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "pages/**/*.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "css/**/*.css",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "js/**/*.js",
-      "use": "@vercel/static"
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/pages/index.html"
-    },
-    {
-      "source": "/dashboard",
-      "destination": "/pages/dashboard.html"
-    },
-    {
-      "source": "/create-task",
-      "destination": "/pages/create-task.html"
-    },
-    {
-      "source": "/tasks",
-      "destination": "/pages/tasks.html"
-    },
-    {
-      "source": "/submissions",
-      "destination": "/pages/submissions.html"
-    }
-  ],
   "cleanUrls": true,
   "trailingSlash": false
 }
