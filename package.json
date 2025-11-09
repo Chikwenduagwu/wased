@@ -4,18 +4,7 @@
   "description": "Decentralized task-to-earn dApp on Base Sepolia",
   "scripts": {
     "dev": "python -m http.server 8000",
-    "build": "echo 'Static site - no build needed'"
-  },
-  "dependencies": {},
-  "devDependencies": {}
-}
-{
-  "name": "basetask",
-  "version": "1.0.0",
-  "description": "Decentralized task-to-earn dApp on Base Sepolia",
-  "scripts": {
-    "dev": "python -m http.server 8000",
-    "build": "echo 'Static site - no build needed'"
+    "build": "echo 'Static site ready for deployment'"
   },
   "dependencies": {},
   "devDependencies": {}
