@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Task - BaseTask</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header>
+    <nav class="container">
+      <a href="index.html" class="logo">BaseTask</a>
+      <ul class="nav-links">
+        <li><a href="tasks.html">Browse Tasks</a></li>
+        <li><a href="create-task.html">Create Task</a></li>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li>
+          <button id="connectWalletBtn" class="btn btn-primary">Connect Wallet</button>
+          <div id="walletInfo" class="wallet-info" style="display: none;">
+            <span class="wallet-address" id="walletAddress"></span>
+            <button onclick="disconnectWallet()" class="btn btn-outline" style="padding: 8px 16px;">Disconnect</button>
+          </div>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="container mt-3">
+    <div id="notConnected" class="text-center" style="display: none;">
+      <div class="card">
+        <h2>Connect Your Wallet</h2>
+        <p class="text-secondary mb-2">Please connect your wallet to create a task.</p>
+        <button onclick="connectWallet()" class="btn btn-primary">Connect Wallet</button>
+      </div>
+    </div>
+
+    <div id="createTaskContent" style="display: none;">
+      <div style="max-width: 700px; margin: 0 auto;">
+        <h1 class="mb-3">Create a New Task</h1>
+        
+        <div class="card">
+          <form id="createTaskForm">
+            <div class="form-group">
+              <label for="taskTitle">Task Title *</label>
+              <input 
+                type="text" 
+                id="taskTitle" 
+                name="title" 
+                placeholder="E.g., Design a logo for my startup"
+                required
+                maxlength="100"
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="taskDescription">Description *</label>
+              <textarea 
+                id="taskDescription" 
+                name="description" 
+                placeholder="Provide detailed information about the task, requirements, and expectations..."
+                required
+                maxlength="1000"
+              ></textarea>
+              <small class="text-secondary">Be specific about what you need done</small>
+            </div>
+
+            <div class="form-group">
+              <label for="taskReward">Reward (USDC) *</label>
+              <input 
+                type="number" 
+                id="taskReward" 
+                name="reward" 
+                placeholder="50"
+                required
+                min="0.01"
+                step="0.01"
+              >
+              <small class="text-secondary">Amount you'll pay upon task completion</small>
+            </div>
+
+            <div class="form-group">
+              <label for="proofType">Proof Type *</label>
+              <select id="proofType" name="proof_type" required>
+                <option value="">Select proof type</option>
+                <option value="link">Link/URL</option>
+                <option value="text">Text Description</option>
+                <option value="image">Image Link</option>
+                <option value="file">File Link</option>
+                <option value="github">GitHub Repository</option>
+                <option value="other">Other</option>
+              </select>
+              <small class="text-secondary">How should workers submit their completed work?</small>
+            </div>
+
+            <div class="form-group">
+              <label for="taskDeadline">Deadline *</label>
+              <input 
+                type="date" 
+                id="taskDeadline" 
+                name="deadline" 
+                required
+              >
+              <small class="text-secondary">When should this task be completed by?</small>
+            </div>
+
+            <div class="alert alert-info" style="margin-top: 20px;">
+              <strong>Important:</strong> Make sure you have sufficient USDC in your wallet to pay the reward. The payment will be sent when you approve the submission.
+            </div>
+
+            <div class="flex gap-2 mt-3">
+              <button type="submit" class="btn btn-primary" id="submitBtn">
+                Create Task
+              </button>
+              <a href="dashboard.html" class="btn btn-outline">Cancel</a>
+            </div>
+          </form>
+        </div>
+
+        <div class="card mt-3" style="background: rgba(0, 102, 255, 0.05);">
+          <h3>💡 Tips for Creating Great Tasks</h3>
+          <ul style="margin-left: 20px; margin-top: 10px; color: var(--text-secondary);">
+            <li>Be clear and specific about requirements</li>
+            <li>Set realistic deadlines</li>
+            <li>Offer fair compensation for the work</li>
+            <li>Specify exactly what proof you need</li>
+            <li>Include examples if possible</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>© 2025 BaseTask - Built on Base Sepolia Testnet</p>
+    </div>
+  </footer>
+
+  <!-- External Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/web3modal@1.9.12/dist/index.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
+
+  <!-- App Scripts -->
+  <script src="../js/config.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/contract.js"></script>
+
+  <script>
+    // Check wallet connection
+    function checkConnection() {
+      if (!isWalletConnected()) {
+        document.getElementById('notConnected').style.display = 'block';
+        document.getElementById('createTaskContent').style.display = 'none';
+        return false;
+      }
+
+      document.getElementById('notConnected').style.display = 'none';
+      document.getElementById('createTaskContent').style.display = 'block';
+      return true;
+    }
+
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('taskDeadline').setAttribute('min', today);
+
+    // Handle form submission
+    document.getElementById('createTaskForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!isWalletConnected()) {
+        showAlert('Please connect your wallet first', 'error');
+        return;
+      }
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="loading"></span> Creating Task...';
+
+      try {
+        const formData = new FormData(e.target);
+        const taskData = {
+          creator_wallet: getCurrentUserAddress().toLowerCase(),
+          title: formData.get('title'),
+          description: formData.get('description'),
+          reward: parseFloat(formData.get('reward')),
+          proof_type: formData.get('proof_type'),
+          deadline: formData.get('deadline'),
+          status: 'active',
+          created_at: new Date().toISOString()
+        };
+
+        // Validate USDC balance
+        const balance = await getUSDCBalance(taskData.creator_wallet);
+        if (parseFloat(balance) < taskData.reward) {
+          throw new Error(`Insufficient USDC balance. You have ${balance} USDC but need ${taskData.reward} USDC`);
+        }
+
+        // Save to Supabase
+        const supabase = getSupabase();
+        const { data, error } = await supabase
+          .from('tasks')
+          .insert([taskData])
+          .select();
+
+        if (error) throw error;
+
+        showAlert('Task created successfully!', 'success');
+        
+        // Redirect to dashboard after short delay
+        setTimeout(() => {
+          window.location.href = 'dashboard.html';
+        }, 1500);
+
+      } catch (error) {
+        console.error('Error creating task:', error);
+        showAlert(`Error: ${error.message}`, 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Task';
+      }
+    });
+
+    // Connect wallet button
+    document.getElementById('connectWalletBtn').addEventListener('click', async () => {
+      await connectWallet();
+      checkConnection();
+    });
+
+    // Initialize
+    checkConnection();
+  </script>
+</body>
+</html>

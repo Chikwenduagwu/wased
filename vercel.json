@@ -1,0 +1,78 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "pages/**/*.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "css/**/*.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "js/**/*.js",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/pages/index.html"
+    },
+    {
+      "src": "/dashboard",
+      "dest": "/pages/dashboard.html"
+    },
+    {
+      "src": "/create-task",
+      "dest": "/pages/create-task.html"
+    },
+    {
+      "src": "/tasks",
+      "dest": "/pages/tasks.html"
+    },
+    {
+      "src": "/submissions",
+      "dest": "/pages/submissions.html"
+    }
+  ]
+}
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "pages/**/*.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "css/**/*.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "js/**/*.js",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/pages/index.html"
+    },
+    {
+      "src": "/dashboard",
+      "dest": "/pages/dashboard.html"
+    },
+    {
+      "src": "/create-task",
+      "dest": "/pages/create-task.html"
+    },
+    {
+      "src": "/tasks",
+      "dest": "/pages/tasks.html"
+    },
+    {
+      "src": "/submissions",
+      "dest": "/pages/submissions.html"
+    }
+  ]
+}

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browse Tasks - BaseTask</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header>
+    <nav class="container">
+      <a href="index.html" class="logo">BaseTask</a>
+      <ul class="nav-links">
+        <li><a href="tasks.html">Browse Tasks</a></li>
+        <li><a href="create-task.html">Create Task</a></li>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li>
+          <button id="connectWalletBtn" class="btn btn-primary">Connect Wallet</button>
+          <div id="walletInfo" class="wallet-info" style="display: none;">
+            <span class="wallet-address" id="walletAddress"></span>
+            <button onclick="disconnectWallet()" class="btn btn-outline" style="padding: 8px 16px;">Disconnect</button>
+          </div>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="container mt-3">
+    <div class="flex flex-between" style="align-items: center; margin-bottom: 30px;">
+      <h1>Available Tasks</h1>
+      <div class="flex gap-1">
+        <select id="filterStatus" class="btn btn-outline" style="padding: 10px 20px;">
+          <option value="all">All Status</option>
+          <option value="active" selected>Active</option>
+          <option value="completed">Completed</option>
+        </select>
+        <select id="sortBy" class="btn btn-outline" style="padding: 10px 20px;">
+          <option value="created_at">Latest</option>
+          <option value="reward_desc">Highest Reward</option>
+          <option value="reward_asc">Lowest Reward</option>
+          <option value="deadline">Deadline</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="tasksList" class="grid grid-2"></div>
+
+    <div id="noTasks" class="card text-center" style="display: none;">
+      <h3>No tasks found</h3>
+      <p class="text-secondary">Be the first to create a task!</p>
+      <a href="create-task.html" class="btn btn-primary mt-2">Create Task</a>
+    </div>
+
+    <div id="loadingTasks" class="text-center">
+      <div class="loading" style="width: 40px; height: 40px;"></div>
+      <p class="text-secondary mt-2">Loading tasks...</p>
+    </div>
+  </main>
+
+  <!-- Submit Proof Modal -->
+  <div id="submitProofModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeSubmitModal()">&times;</span>
+      <h2 class="mb-2">Submit Proof</h2>
+      <form id="submitProofForm">
+        <input type="hidden" id="modalTaskId">
+        <div class="form-group">
+          <label for="proofInput">Proof of Completion *</label>
+          <textarea 
+            id="proofInput" 
+            placeholder="Paste your link, description, or proof here..."
+            required
+            maxlength="500"
+          ></textarea>
+          <small class="text-secondary">Provide evidence that you completed this task</small>
+        </div>
+        <div class="alert alert-info">
+          Make sure your proof clearly demonstrates task completion. The creator will review before payment.
+        </div>
+        <div class="flex gap-2 mt-2">
+          <button type="submit" class="btn btn-primary" id="submitProofBtn">Submit Proof</button>
+          <button type="button" class="btn btn-outline" onclick="closeSubmitModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p>© 2025 BaseTask - Built on Base Sepolia Testnet</p>
+    </div>
+  </footer>
+
+  <!-- External Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/web3modal@1.9.12/dist/index.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
+
+  <!-- App Scripts -->
+  <script src="../js/config.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/contract.js"></script>
+
+  <script>
+    let allTasks = [];
+    let currentTaskForSubmit = null;
+
+    // Load all tasks
+    async function loadTasks() {
+      try {
+        document.getElementById('loadingTasks').style.display = 'block';
+        document.getElementById('tasksList').innerHTML = '';
+        document.getElementById('noTasks').style.display = 'none';
+
+        const supabase = getSupabase();
+        const { data: tasks, error } = await supabase
+          .from('tasks')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        allTasks = tasks;
+        filterAndRenderTasks();
+
+      } catch (error) {
+        console.error('Error loading tasks:', error);
+        showAlert('Error loading tasks', 'error');
+      } finally {
+        document.getElementById('loadingTasks').style.display = 'none';
+      }
+    }
+
+    // Filter and render tasks
+    function filterAndRenderTasks() {
+      const filterStatus = document.getElementById('filterStatus').value;
+      const sortBy = document.getElementById('sortBy').value;
+
+      let filteredTasks = allTasks;
+
+      // Filter by status
+      if (filterStatus !== 'all') {
+        filteredTasks = filteredTasks.filter(task => task.status === filterStatus);
+      }
+
+      // Sort tasks
+      filteredTasks.sort((a, b) => {
+        switch (sortBy) {
+          case 'reward_desc':
+            return b.reward - a.reward;
+          case 'reward_asc':
+            return a.reward - b.reward;
+          case 'deadline':
+            return new Date(a.deadline) - new Date(b.deadline);
+          default: // created_at
+            return new Date(b.created_at) - new Date(a.created_at);
+        }
+      });
+
+      renderTasks(filteredTasks);
+    }
+
+    // Render tasks
+    function renderTasks(tasks) {
+      const container = document.getElementById('tasksList');
+      
+      if (tasks.length === 0) {
+        container.innerHTML = '';
+        document.getElementById('noTasks').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('noTasks').style.display = 'none';
+
+      container.innerHTML = tasks.map(task => {
+        const isMyTask = isWalletConnected() && task.creator_wallet === getCurrentUserAddress()?.toLowerCase();
+        const isExpired = new Date(task.deadline) < new Date();
+        
+        return `
+          <div class="card task-card">
+            <div class="task-header">
+              <div style="flex: 1;">
+                <h3 class="task-title">${escapeHtml(task.title)}</h3>
+                <div class="flex gap-1 mt-1">
+                  <span class="badge badge-${task.status === 'active' ? 'active' : 'completed'}">${task.status}</span>
+                  ${isExpired ? '<span class="badge badge-rejected">Expired</span>' : ''}
+                  ${isMyTask ? '<span class="badge badge-pending">Your Task</span>' : ''}
+                </div>
+              </div>
+              <div class="task-reward">${task.reward} USDC</div>
+            </div>
+            <p class="task-description">${escapeHtml(task.description)}</p>
+            <div class="task-meta">
+              <div class="task-meta-item">📅 Deadline: ${formatDate(task.deadline)}</div>
+              <div class="task-meta-item">📝 Proof: ${escapeHtml(task.proof_type)}</div>
+              <div class="task-meta-item">👤 ${formatAddress(task.creator_wallet)}</div>
+            </div>
+            ${!isMyTask && task.status === 'active' && !isExpired ? `
+              <div class="mt-2">
+                <button onclick="openSubmitModal('${task.id}')" class="btn btn-primary glow-on-hover">
+                  Submit Work
+                </button>
+              </div>
+            ` : ''}
+            ${isMyTask ? `
+              <div class="mt-2">
+                <a href="submissions.html?task=${task.id}" class="btn btn-outline">View Submissions</a>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Open submit modal
+    function openSubmitModal(taskId) {
+      if (!isWalletConnected()) {
+        showAlert('Please connect your wallet first', 'error');
+        return;
+      }
+
+      currentTaskForSubmit = taskId;
+      document.getElementById('modalTaskId').value = taskId;
+      document.getElementById('submitProofModal').classList.add('active');
+      document.getElementById('proofInput').value = '';
+    }
+
+    // Close submit modal
+    function closeSubmitModal() {
+      document.getElementById('submitProofModal').classList.remove('active');
+      currentTaskForSubmit = null;
+    }
+
+    // Handle proof submission
+    document.getElementById('submitProofForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!isWalletConnected()) {
+        showAlert('Please connect your wallet first', 'error');
+        return;
+      }
+
+      const submitBtn = document.getElementById('submitProofBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="loading"></span> Submitting...';
+
+      try {
+        const taskId = document.getElementById('modalTaskId').value;
+        const proof = document.getElementById('proofInput').value;
+
+        const submissionData = {
+          task_id: taskId,
+          worker_wallet: getCurrentUserAddress().toLowerCase(),
+          proof: proof,
+          status: 'pending',
+          created_at: new Date().toISOString()
+        };
+
+        const supabase = getSupabase();
+        const { data, error } = await supabase
+          .from('submissions')
+          .insert([submissionData])
+          .select();
+
+        if (error) throw error;
+
+        showAlert('Proof submitted successfully! Wait for creator approval.', 'success');
+        closeSubmitModal();
+        
+      } catch (error) {
+        console.error('Error submitting proof:', error);
+        showAlert(`Error: ${error.message}`, 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Proof';
+      }
+    });
+
+    // Utility functions
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Event listeners
+    document.getElementById('filterStatus').addEventListener('change', filterAndRenderTasks);
+    document.getElementById('sortBy').addEventListener('change', filterAndRenderTasks);
+
+    document.getElementById('connectWalletBtn').addEventListener('click', async () => {
+      await connectWallet();
+    });
+
+    // Close modal when clicking outside
+    document.getElementById('submitProofModal').addEventListener('click', (e) => {
+      if (e.target.id === 'submitProofModal') {
+        closeSubmitModal();
+      }
+    });
+
+    // Initialize
+    loadTasks();
+  </script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - BaseTask</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header>
+    <nav class="container">
+      <a href="index.html" class="logo">BaseTask</a>
+      <ul class="nav-links">
+        <li><a href="tasks.html">Browse Tasks</a></li>
+        <li><a href="create-task.html">Create Task</a></li>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li>
+          <button id="connectWalletBtn" class="btn btn-primary">Connect Wallet</button>
+          <div id="walletInfo" class="wallet-info" style="display: none;">
+            <span class="wallet-address" id="walletAddress"></span>
+            <button onclick="disconnectWallet()" class="btn btn-outline" style="padding: 8px 16px;">Disconnect</button>
+          </div>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="container mt-3">
+    <div id="notConnected" class="text-center" style="display: none;">
+      <div class="card">
+        <h2>Connect Your Wallet</h2>
+        <p class="text-secondary mb-2">Please connect your wallet to view your dashboard.</p>
+        <button onclick="connectWallet()" class="btn btn-primary">Connect Wallet</button>
+      </div>
+    </div>
+
+    <div id="dashboardContent" style="display: none;">
+      <div class="flex flex-between" style="align-items: center; margin-bottom: 30px;">
+        <h1>My Dashboard</h1>
+        <div class="card" style="padding: 15px 20px;">
+          <div style="font-size: 14px; color: var(--text-secondary);">USDC Balance</div>
+          <div style="font-size: 24px; font-weight: 700; color: var(--primary-blue);" id="usdcBalance">0.00 USDC</div>
+        </div>
+      </div>
+
+      <div class="grid grid-2 mb-3">
+        <div class="card text-center">
+          <h3 style="font-size: 36px; color: var(--primary-blue); margin-bottom: 5px;" id="tasksCreated">0</h3>
+          <p class="text-secondary">Tasks Created</p>
+        </div>
+        <div class="card text-center">
+          <h3 style="font-size: 36px; color: var(--success); margin-bottom: 5px;" id="tasksCompleted">0</h3>
+          <p class="text-secondary">Tasks Completed</p>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 40px;">
+        <div class="flex flex-between" style="align-items: center; margin-bottom: 20px;">
+          <h2>My Created Tasks</h2>
+          <a href="create-task.html" class="btn btn-primary">+ New Task</a>
+        </div>
+        <div id="createdTasksList"></div>
+      </div>
+
+      <div>
+        <h2 class="mb-2">Tasks I'm Working On</h2>
+        <div id="participatedTasksList"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>© 2025 BaseTask - Built on Base Sepolia Testnet</p>
+    </div>
+  </footer>
+
+  <!-- External Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/web3modal@1.9.12/dist/index.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
+
+  <!-- App Scripts -->
+  <script src="../js/config.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/contract.js"></script>
+
+  <script>
+    // Check wallet connection
+    async function checkConnection() {
+      if (!isWalletConnected()) {
+        document.getElementById('notConnected').style.display = 'block';
+        document.getElementById('dashboardContent').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('notConnected').style.display = 'none';
+      document.getElementById('dashboardContent').style.display = 'block';
+      
+      await loadDashboardData();
+    }
+
+    // Load dashboard data
+    async function loadDashboardData() {
+      const address = getCurrentUserAddress();
+      if (!address) return;
+
+      try {
+        // Load USDC balance
+        const balance = await getUSDCBalance(address);
+        document.getElementById('usdcBalance').textContent = `${parseFloat(balance).toFixed(2)} USDC`;
+
+        // Load tasks from Supabase
+        const supabase = getSupabase();
+
+        // Get created tasks
+        const { data: createdTasks, error: createdError } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('creator_wallet', address.toLowerCase())
+          .order('created_at', { ascending: false });
+
+        if (createdError) throw createdError;
+
+        // Get participated tasks (through submissions)
+        const { data: submissions, error: submissionsError } = await supabase
+          .from('submissions')
+          .select('*, tasks(*)')
+          .eq('worker_wallet', address.toLowerCase())
+          .order('created_at', { ascending: false });
+
+        if (submissionsError) throw submissionsError;
+
+        // Update stats
+        document.getElementById('tasksCreated').textContent = createdTasks.length;
+        const completedCount = submissions.filter(s => s.status === 'approved').length;
+        document.getElementById('tasksCompleted').textContent = completedCount;
+
+        // Render created tasks
+        renderCreatedTasks(createdTasks);
+
+        // Render participated tasks
+        renderParticipatedTasks(submissions);
+
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+        showAlert('Error loading dashboard data', 'error');
+      }
+    }
+
+    // Render created tasks
+    function renderCreatedTasks(tasks) {
+      const container = document.getElementById('createdTasksList');
+      
+      if (tasks.length === 0) {
+        container.innerHTML = '<div class="card text-center"><p class="text-secondary">You haven\'t created any tasks yet.</p><a href="create-task.html" class="btn btn-primary mt-2">Create Your First Task</a></div>';
+        return;
+      }
+
+      container.innerHTML = tasks.map(task => `
+        <div class="card task-card mb-2">
+          <div class="task-header">
+            <div>
+              <h3 class="task-title">${escapeHtml(task.title)}</h3>
+              <span class="badge badge-${task.status === 'active' ? 'active' : 'completed'}">${task.status}</span>
+            </div>
+            <div class="task-reward">${task.reward} USDC</div>
+          </div>
+          <p class="task-description">${escapeHtml(task.description)}</p>
+          <div class="task-meta">
+            <div class="task-meta-item">📅 Deadline: ${formatDate(task.deadline)}</div>
+            <div class="task-meta-item">📝 Proof: ${escapeHtml(task.proof_type)}</div>
+          </div>
+          <div class="flex gap-1 mt-2">
+            <a href="submissions.html?task=${task.id}" class="btn btn-outline">View Submissions</a>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Render participated tasks
+    function renderParticipatedTasks(submissions) {
+      const container = document.getElementById('participatedTasksList');
+      
+      if (submissions.length === 0) {
+        container.innerHTML = '<div class="card text-center"><p class="text-secondary">You haven\'t submitted to any tasks yet.</p><a href="tasks.html" class="btn btn-primary mt-2">Browse Available Tasks</a></div>';
+        return;
+      }
+
+      container.innerHTML = submissions.map(sub => {
+        const task = sub.tasks;
+        return `
+          <div class="card task-card mb-2">
+            <div class="task-header">
+              <div>
+                <h3 class="task-title">${escapeHtml(task.title)}</h3>
+                <span class="badge badge-${sub.status}">${sub.status}</span>
+              </div>
+              <div class="task-reward">${task.reward} USDC</div>
+            </div>
+            <p class="task-description">${escapeHtml(task.description)}</p>
+            <div class="task-meta">
+              <div class="task-meta-item">📝 Your proof: ${escapeHtml(sub.proof)}</div>
+              <div class="task-meta-item">📅 Submitted: ${formatDate(sub.created_at)}</div>
+            </div>
+            ${sub.transaction_hash ? `<div class="mt-1"><a href="https://sepolia.basescan.org/tx/${sub.transaction_hash}" target="_blank" class="btn btn-outline">View Transaction</a></div>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Utility functions
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Connect wallet button
+    document.getElementById('connectWalletBtn').addEventListener('click', async () => {
+      await connectWallet();
+      await checkConnection();
+    });
+
+    // Initialize
+    checkConnection();
+  </script>
+</body>
+</html>
