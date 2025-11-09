@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "Decentralized task-to-earn dApp on Base Sepolia",
   "scripts": {
-    "dev": "npx serve .",
-    "build": "echo 'Build complete'"
-  },
-  "dependencies": {},
-  "devDependencies": {}
+    "build": "echo 'Static site ready for deployment'"
+  }
 }
