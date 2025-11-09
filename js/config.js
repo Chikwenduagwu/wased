@@ -1,8 +1,8 @@
 // Configuration for Supabase and environment variables
 const CONFIG = {
   // These will be replaced with actual values from .env in production
-  SUPABASE_URL: 'YOUR_SUPABASE_URL',
-  SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY',
+  SUPABASE_URL: 'https://qdepsrfmaxxoudulbzuf.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkZXBzcmZtYXh4b3VkdWxienVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2ODQyNTgsImV4cCI6MjA3ODI2MDI1OH0.5dAFXJ_qQVyviqrJzHzTlXWSmlZ5PG1y9NUfj3hS6SQ',
   WALLETCONNECT_PROJECT_ID: 'YOUR_WALLETCONNECT_PROJECT_ID',
   BASE_SEPOLIA_RPC: 'https://sepolia.base.org',
   BASE_SEPOLIA_CHAIN_ID: 84532,
@@ -10,7 +10,7 @@ const CONFIG = {
   
   // Platform fee configuration
   PLATFORM_FEE_PERCENTAGE: 5, // 5% platform fee
-  PLATFORM_WALLET_ADDRESS: 'YOUR_WALLET_ADDRESS_HERE' // Replace with your wallet address
+  PLATFORM_WALLET_ADDRESS: '0xf2f23B0930A4F4D5B35Ae3E0AbC16FF92072A1fE' // Replace with your wallet address
 };
 
 // Initialize Supabase client
