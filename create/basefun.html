@@ -94,17 +94,19 @@
   </style>
 </head>
 <body>
-    
-    
   <div class="login-container">
     <div class="login-card" id="card">
       <div class="login-header">
-        <img src="logo.png" width="90px" height="50px" />
-        <p>Deploy ERC-20 tokens on Base</p>
+        <img src="logo.png" width="90px" height="50px"/>
+        <p>Deploy ERC-20 tokens on Base Sepolia</p>
       </div>
 
      
-      
+      <div id="successArea" class="success-message" aria-hidden="true">
+        <div class="success-icon">✓</div>
+        <h3 id="successTitle">Deployed</h3>
+        <p id="successText">Your token was created successfully.</p>
+      </div>
 
       <!-- Form -->
       <form id="tokenForm" class="token-form" autocomplete="off" novalidate>
@@ -159,16 +161,12 @@
 
       <div class="divider"><span>Latest Tokens</span></div>
 
-     <!-- <div id="tokensList" style="max-height:260px; overflow:auto; padding-top:8px;">
+      <div id="tokensList" style="max-height:260px; overflow:auto; padding-top:8px;">
         <div style="padding:12px; border:2px solid #000000;">Loading tokens...</div>
-      </div>-->
+      </div>
     </div>
   </div>
-<div id="successArea" class="success-message" aria-hidden="true">
-        <div class="success-icon">✓</div>
-        <h3 id="successTitle">Deployed</h3>
-        <p id="successText">Your token was created successfully.</p>
-      </div>
+
 <script>
 
 const FACTORY_CONTRACT_ADDRESS = "0x07620FED9A33a6265d1Cb91da43494179BfBDf23";
