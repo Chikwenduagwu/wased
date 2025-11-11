@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WASED Token Creator</title>
+
+  <!-- ethers v6 UMD -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
+
+  <style>
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Arial', sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; line-height: 1.4; }
+    .login-container { width: 100%; max-width: 400px; }
+    .login-card { background: #ffffff; border: 3px solid #000000; border-radius: 0; padding: 40px; box-shadow: 8px 8px 0 #000000; transition: all 0.2s ease; }
+    .login-card:hover { transform: translate(-2px, -2px); box-shadow: 10px 10px 0 #000000; }
+    .login-header { text-align: center; margin-bottom: 32px; }
+    .logo { margin-bottom: 16px; display: flex; justify-content: center; }
+    .logo-square { width: 48px; height: 48px; background: #000000; border: 3px solid #000000; position: relative; }
+    .logo-square::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 16px; background: #ffffff; }
+    .login-header h2 { color: #000000; font-size: 1.75rem; font-weight: 900; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+    .login-header p { color: #666666; font-size: 14px; font-weight: 600; text-transform: uppercase; }
+
+    .form-group { margin-bottom: 24px; position: relative; }
+    .form-label { display: block; font-size: 12px; font-weight: 700; color: #000000; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .input-wrapper { position: relative; border: 2px solid #000000; background: #ffffff; }
+    .input-wrapper input { width: 100%; background: transparent; border: none; padding: 12px 16px; color: #000000; font-size: 16px; font-weight: 500; outline: none; font-family: inherit; }
+    .input-wrapper input::placeholder { color: #999999; }
+    .input-wrapper:focus-within { box-shadow: 4px 4px 0 #000000; transform: translate(-2px, -2px); }
+
+    .password-wrapper { display: flex; align-items: center; }
+    .password-wrapper input { flex: 1; padding-right: 60px; }
+    .password-toggle { position: absolute; right: 0; top: 0; bottom: 0; background: #000000; color: #ffffff; border: none; padding: 0 12px; cursor: pointer; font-family: inherit; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s ease; }
+    .password-toggle:hover { background: #333333; }
+    .password-toggle:active { transform: scale(0.98); }
+
+    .form-options { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+    .checkbox-wrapper { display: flex; align-items: center; cursor: pointer; }
+    .checkbox-wrapper input[type="checkbox"] { display: none; }
+    .checkbox-label { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: 14px; font-weight: 600; color: #000000; }
+    .checkbox-box { width: 16px; height: 16px; border: 2px solid #000000; background: #ffffff; position: relative; transition: all 0.2s ease; }
+    .checkbox-wrapper input[type="checkbox"]:checked + .checkbox-label .checkbox-box { background: #000000; }
+    .checkbox-box::after { content: '✓'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #ffffff; font-size: 10px; font-weight: 900; opacity: 0; transition: opacity 0.2s ease; }
+    .checkbox-wrapper input[type="checkbox"]:checked + .checkbox-label .checkbox-box::after { opacity: 1; }
+    .forgot-link { color: #000000; text-decoration: none; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s ease; border-bottom: 2px solid transparent; }
+    .forgot-link:hover { border-bottom-color: #000000; }
+
+    .login-btn { width: 100%; background: #000000; color: #ffffff; border: 2px solid #000000; padding: 16px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; position: relative; margin-bottom: 24px; transition: all 0.2s ease; overflow: hidden; }
+    .login-btn:hover { background: #333333; transform: translate(-2px, -2px); box-shadow: 4px 4px 0 #000000; }
+    .login-btn:active { transform: translate(0, 0); box-shadow: 2px 2px 0 #000000; }
+    .btn-text { position: relative; z-index: 1; transition: opacity 0.2s ease; }
+    .btn-loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; gap: 3px; opacity: 0; transition: opacity 0.2s ease; }
+    .loader-bar { width: 3px; height: 16px; background: #ffffff; animation: loaderPulse 1s ease-in-out infinite; }
+    .loader-bar:nth-child(2) { animation-delay: 0.2s; }
+    .loader-bar:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes loaderPulse { 0%, 80%, 100% { transform: scaleY(0.5); opacity: 0.5; } 40% { transform: scaleY(1); opacity: 1; } }
+    .login-btn.loading .btn-text { opacity: 0; }
+    .login-btn.loading .btn-loader { opacity: 1; }
+
+    .divider { text-align: center; margin: 24px 0; position: relative; }
+    .divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: #000000; transform: translateY(-50%); }
+    .divider span { background: #ffffff; color: #000000; padding: 0 16px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; position: relative; z-index: 1; }
+
+    .social-login { display: flex; gap: 12px; margin-bottom: 24px; }
+    .social-btn { flex: 1; background: #ffffff; color: #000000; border: 2px solid #000000; padding: 12px; cursor: pointer; font-family: inherit; font-weight: 700; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; transition: all 0.2s ease; }
+    .social-btn:hover { background: #000000; color: #ffffff; transform: translate(-1px, -1px); box-shadow: 2px 2px 0 #000000; }
+    .social-btn:active { transform: translate(0, 0); box-shadow: 1px 1px 0 #000000; }
+
+    .signup-link { text-align: center; font-size: 14px; font-weight: 600; color: #666666; }
+    .signup-link a { color: #000000; text-decoration: none; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid transparent; transition: all 0.2s ease; }
+    .signup-link a:hover { border-bottom-color: #000000; }
+
+    .error-message { color: #dc3545; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px; margin-left: 2px; opacity: 0; transform: translateY(-8px); transition: all 0.2s ease; }
+    .error-message.show { opacity: 1; transform: translateY(0); }
+    .form-group.error .input-wrapper { border-color: #dc3545; animation: shake 0.3s ease-in-out; }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+    .success-message { display: none; text-align: center; padding: 32px 20px; opacity: 0; transform: translateY(16px); transition: all 0.3s ease; }
+    .success-message.show { display: block; opacity: 1; transform: translateY(0); }
+    .success-icon { width: 48px; height: 48px; background: #000000; color: #ffffff; border: 2px solid #000000; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; margin: 0 auto 16px; animation: successPop 0.5s ease-out; }
+    @keyframes successPop { 0% { transform: scale(0); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    .success-message h3 { color: #000000; font-size: 1.25rem; font-weight: 900; text-transform: uppercase; margin-bottom: 4px; }
+    .success-message p { color: #666666; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    @media (max-width: 480px) {
+      body { padding: 16px; }
+      .login-card { padding: 28px; box-shadow: 6px 6px 0 #000000; }
+      .login-card:hover { transform: translate(-1px, -1px); box-shadow: 7px 7px 0 #000000; }
+      .login-header h2 { font-size: 1.5rem; }
+      .form-options { flex-direction: column; align-items: flex-start; gap: 16px; }
+      .social-login { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+    
+    
+  <div class="login-container">
+    <div class="login-card" id="card">
+      <div class="login-header">
+        <img src="logo.png" width="90px" height="50px" />
+        <p>Deploy ERC-20 tokens on Base</p>
+      </div>
+
+     
+      
+
+      <!-- Form -->
+      <form id="tokenForm" class="token-form" autocomplete="off" novalidate>
+        <div class="form-group">
+          <label class="form-label">Wallet</label>
+          <div class="input-wrapper" style="display:flex; gap:8px; align-items:center; padding:8px 12px;">
+            <div id="walletStatus" style="flex:1; font-weight:700; color:#000000;">Not connected</div>
+            <button type="button" id="connectBtn" class="password-toggle" style="position:static; padding:8px 10px; font-size:12px;">Connect</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Token Name</label>
+          <div class="input-wrapper">
+            <input id="tokenName" placeholder="My Awesome Token" required />
+          </div>
+          <div class="error-message" id="errName">Please enter token name</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Token Symbol</label>
+          <div class="input-wrapper">
+            <input id="tokenSymbol" placeholder="MAT" maxlength="10" required />
+          </div>
+          <div class="error-message" id="errSymbol">Enter symbol (max 10 chars)</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Total Supply</label>
+          <div class="input-wrapper">
+            <input id="totalSupply" placeholder="1000000" type="number" min="1" required />
+          </div>
+          <div class="error-message" id="errSupply">Enter a positive supply</div>
+        </div>
+
+        <div class="form-options">
+          <label class="checkbox-wrapper">
+            <input type="checkbox" id="confirmFee" />
+            <span class="checkbox-label"><span class="checkbox-box"></span> I accept deployment fee (0.00001 ETH)</span>
+          </label>
+
+          <a class="forgot-link" href="#" id="viewExplorer" target="_blank" style="display:none;">View last tx</a>
+        </div>
+
+        <button id="deployBtn" class="login-btn" type="submit">
+          <span class="btn-text">Deploy Token</span>
+          <span class="btn-loader" aria-hidden="true">
+            <span class="loader-bar"></span><span class="loader-bar"></span><span class="loader-bar"></span>
+          </span>
+        </button>
+      </form>
+
+      <div class="divider"><span>Latest Tokens</span></div>
+
+     <!-- <div id="tokensList" style="max-height:260px; overflow:auto; padding-top:8px;">
+        <div style="padding:12px; border:2px solid #000000;">Loading tokens...</div>
+      </div>-->
+    </div>
+  </div>
+<div id="successArea" class="success-message" aria-hidden="true">
+        <div class="success-icon">✓</div>
+        <h3 id="successTitle">Deployed</h3>
+        <p id="successText">Your token was created successfully.</p>
+      </div>
+<script>
+
+const FACTORY_CONTRACT_ADDRESS = "0x07620FED9A33a6265d1Cb91da43494179BfBDf23";
+const BASE_SEPOLIA_CHAIN_ID = 84532;
+const BASE_SEPOLIA_CHAIN_ID_HEX = '0x14a34';
+const PLATFORM_FEE_WEI = '10000000000000'; // 0.00001 ETH
+
+const FACTORY_ABI = [
+  "function createToken(string name, string symbol, uint256 totalSupply) payable returns (address)",
+  "event TokenCreated(address indexed tokenAddress, address indexed creator, string name, string symbol, uint256 totalSupply)"
+];
+
+/* ---------- State ---------- */
+let provider = null;
+let signer = null;
+let userAddress = null;
+
+/* DOM refs */
+const connectBtn = document.getElementById('connectBtn');
+const walletStatus = document.getElementById('walletStatus');
+const deployBtn = document.getElementById('deployBtn');
+const tokensList = document.getElementById('tokensList');
+const viewExplorer = document.getElementById('viewExplorer');
+
+const successArea = document.getElementById('successArea');
+const successTitle = document.getElementById('successTitle');
+const successText = document.getElementById('successText');
+
+const errName = document.getElementById('errName');
+const errSymbol = document.getElementById('errSymbol');
+const errSupply = document.getElementById('errSupply');
+
+connectBtn.addEventListener('click', connectWallet);
+document.getElementById('tokenForm').addEventListener('submit', onSubmit);
+
+/* ---------- Helpers ---------- */
+function showError(node, show) {
+  if (show) node.classList.add('show'), node.parentElement.classList.add('error');
+  else node.classList.remove('show'), node.parentElement.classList.remove('error');
+}
+function shortAddr(a) { return a ? a.slice(0,6)+'...'+a.slice(-4) : '-'; }
+function shortTx(t) { return t ? t.slice(0,8)+'...'+t.slice(-6) : '-'; }
+function setButtonLoading(on) {
+  if (on) deployBtn.classList.add('loading'), deployBtn.setAttribute('disabled','');
+  else deployBtn.classList.remove('loading'), deployBtn.removeAttribute('disabled');
+}
+function showSuccess(name, addr, tx) {
+  successTitle.textContent = "Deployed";
+  successText.textContent = `${name} — ${shortAddr(addr)} deployed (tx ${shortTx(tx)})`;
+  successArea.classList.add('show');
+  viewExplorer.style.display = 'inline-block';
+  viewExplorer.href = `https://sepolia-explorer.base.org/tx/${tx}`;
+}
+function escapeHtml(s) { return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+/* ---------- Wallet & network ---------- */
+async function connectWallet() {
+  try {
+    if (typeof window.ethereum === 'undefined') {
+      alert('MetaMask (or another injected wallet) is required.');
+      return;
+    }
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    userAddress = accounts[0];
+    provider = new ethers.BrowserProvider(window.ethereum);
+    signer = await provider.getSigner();
+
+    const network = await provider.getNetwork();
+    if (Number(network.chainId) !== BASE_SEPOLIA_CHAIN_ID) {
+      try {
+        await switchToBaseSepolia();
+      } catch (e) {
+        console.warn('Chain switch failed', e);
+        walletStatus.textContent = 'Wrong network';
+        connectBtn.textContent = 'Connect';
+        return;
+      }
+    }
+
+    walletStatus.textContent = shortAddr(userAddress);
+    connectBtn.textContent = 'Connected';
+    await fetchLatestTokens();
+    window.ethereum.on('accountsChanged', handleAccountsChanged);
+    window.ethereum.on('chainChanged', () => window.location.reload());
+  } catch (err) {
+    console.error('connectWallet', err);
+    walletStatus.textContent = 'Not connected';
+    connectBtn.textContent = 'Connect';
+  }
+}
+
+function handleAccountsChanged(accounts) {
+  if (!accounts || accounts.length === 0) {
+    userAddress = null;
+    walletStatus.textContent = 'Not connected';
+    connectBtn.textContent = 'Connect';
+  } else {
+    userAddress = accounts[0];
+    walletStatus.textContent = shortAddr(userAddress);
+  }
+}
+
+async function switchToBaseSepolia() {
+  try {
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: BASE_SEPOLIA_CHAIN_ID_HEX }],
+    });
+  } catch (switchError) {
+    if (switchError.code === 4902) {
+      await window.ethereum.request({
+        method: 'wallet_addEthereumChain',
+        params: [{
+          chainId: BASE_SEPOLIA_CHAIN_ID_HEX,
+          chainName: 'Base Sepolia',
+          nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+          rpcUrls: ['https://sepolia.base.org'],
+          blockExplorerUrls: ['https://sepolia-explorer.base.org']
+        }]
+      });
+    } else {
+      throw switchError;
+    }
+  }
+}
+
+/* ---------- Deploy flow ---------- */
+async function onSubmit(e) {
+  e.preventDefault();
+  // validation
+  const name = document.getElementById('tokenName').value.trim();
+  const symbol = document.getElementById('tokenSymbol').value.trim();
+  const supplyRaw = document.getElementById('totalSupply').value;
+  const acceptFee = document.getElementById('confirmFee').checked;
+
+  let ok = true;
+  showError(errName, false);
+  showError(errSymbol, false);
+  showError(errSupply, false);
+
+  if (!name) { showError(errName, true); ok = false; }
+  if (!symbol || symbol.length > 10) { showError(errSymbol, true); ok = false; }
+  if (!supplyRaw || Number(supplyRaw) < 1) { showError(errSupply, true); ok = false; }
+  if (!acceptFee) { alert('Please accept the deployment fee to proceed.'); ok = false; }
+  if (!ok) return;
+
+  if (!signer) { alert('Please connect your wallet first.'); return; }
+
+  try {
+    setButtonLoading(true);
+    successArea.classList.remove('show');
+
+    // instantiate contract with signer
+    const factory = new ethers.Contract(FACTORY_CONTRACT_ADDRESS, FACTORY_ABI, signer);
+    const totalSupply = BigInt(supplyRaw);
+    const value = BigInt(PLATFORM_FEE_WEI);
+
+    // send transaction
+    const tx = await factory.createToken(name, symbol, totalSupply, { value });
+    const receipt = await tx.wait();
+
+    // parse TokenCreated event
+    let tokenAddr = null;
+    try {
+      for (const l of receipt.logs) {
+        try {
+          const parsed = factory.interface.parseLog({ topics: l.topics, data: l.data });
+          if (parsed && parsed.name === 'TokenCreated') {
+            tokenAddr = parsed.args.tokenAddress || parsed.args[0];
+            break;
+          }
+        } catch (e) { /* skip */ }
+      }
+    } catch (e) { console.warn('event parse outer', e); }
+
+    const deployedAddr = tokenAddr || 'N/A';
+    const txHash = receipt.transactionHash || tx.hash;
+
+    showSuccess(name, deployedAddr, txHash);
+
+    // refresh tokens
+    await fetchLatestTokens();
+  } catch (err) {
+    console.error('deploy error', err);
+    alert('Deploy failed: ' + (err?.message || String(err)));
+  } finally {
+    setButtonLoading(false);
+    document.getElementById('tokenForm').reset();
+    connectBtn.textContent = signer ? 'Connected' : 'Connect';
+  }
+}
+
+/* ---------- Read & display latest tokens ---------- */
+async function fetchLatestTokens() {
+  try {
+    // read provider - fallback if wallet not connected
+    const readProvider = provider || new ethers.JsonRpcProvider('https://sepolia.base.org');
+    const factoryRead = new ethers.Contract(FACTORY_CONTRACT_ADDRESS, FACTORY_ABI, readProvider);
+
+    // pick a recent window
+    let fromBlock = 0;
+    try { const latestBlock = await readProvider.getBlockNumber(); fromBlock = Math.max(0, latestBlock - 50000); } catch (e) { /* ignore */ }
+
+    const filter = factoryRead.filters.TokenCreated();
+    const events = await factoryRead.queryFilter(filter, fromBlock, 'latest');
+
+    if (!events || events.length === 0) {
+      tokensList.innerHTML = '<div style="padding:12px; border:2px solid #000000;">No tokens found</div>';
+      return;
+    }
+
+    const latest = events.slice(-20).reverse();
+
+    const rows = latest.map(ev => {
+      const a = ev.args || [];
+      const name = a.name || a[2] || '-';
+      const symbol = a.symbol || a[3] || '-';
+      const supply = a.totalSupply ? a.totalSupply.toString() : (a[4] ? a[4].toString() : '-');
+      const tokenAddress = a.tokenAddress || a[0] || '-';
+      const creator = a.creator || a[1] || '-';
+      const tx = ev.transactionHash || '-';
+
+      return `
+        <div style="padding:12px; border:2px solid #000000; margin-bottom:10px; display:flex; flex-direction:column; gap:6px;">
+          <div style="display:flex; justify-content:space-between; font-weight:700;">
+            <div>${escapeHtml(name)} <span style="font-weight:900; margin-left:8px;">${escapeHtml(symbol)}</span></div>
+            <div style="font-weight:700">${escapeHtml(supply)}</div>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:12px;">
+            <div>Addr: <a href="https://sepolia-explorer.base.org/address/${tokenAddress}" target="_blank">${shortAddr(tokenAddress)}</a></div>
+            <div>By: ${shortAddr(creator)}</div>
+          </div>
+          <div style="font-size:12px; margin-top:6px;">
+            <a href="https://sepolia-explorer.base.org/tx/${tx}" target="_blank">View tx →</a>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    tokensList.innerHTML = rows;
+  } catch (err) {
+    console.error('fetchLatestTokens', err);
+    tokensList.innerHTML = `<div style="padding:12px; border:2px solid #000000;">Error loading tokens: ${escapeHtml(err.message || String(err))}</div>`;
+  }
+}
+
+/* ---------- Init ---------- */
+fetchLatestTokens().catch(()=>{});
+</script>
+</body>
+</html>
